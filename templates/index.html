@@ -73,11 +73,27 @@
         "
       >
         <h3>Select Mode</h3>
+        <!-- <button onclick="setMode('text')" class="btn btn-info m-2">
+          📝 Text Recognition
+        </button> -->
+
+        <div class="m-2">
+          <button onclick="showObjectOptions()" class="btn btn-warning">
+            📦 Object Recognition
+          </button>
+          <div id="objectModelSelect" style="display: none; margin-top: 10px">
+            <select id="objectModelDropdown" class="form-select">
+              <option value="object">🧠 CNN Model</option>
+              <option value="object_yolo">📦 YOLO Model</option>
+            </select>
+            <button onclick="selectObjectModel()" class="btn btn-success mt-2">
+              Select
+            </button>
+          </div>
+        </div>
+
         <button onclick="setMode('text')" class="btn btn-info m-2">
           📝 Text Recognition
-        </button>
-        <button onclick="setMode('object')" class="btn btn-warning m-2">
-          📦 Object Recognition
         </button>
       </div>
     </div>
@@ -100,6 +116,7 @@
       <p id="recognizedText">Text:</p>
     </div>
 
+    <!-- Replace inside <script> tag -->
     <script>
       let currentMode = "text"; // default
 
@@ -111,30 +128,57 @@
           body: JSON.stringify({ mode }),
         }).then(() => {
           document.getElementById("modeModal").style.display = "none";
-          document.querySelector(".controls button:nth-child(3)").innerText =
-            mode === "object" ? "🔍 Recognize Object" : "🔍 Recognize Text";
+          updateRecognizeButton();
         });
       }
 
-      function toggleMode() {
-        const newMode = currentMode === "text" ? "object" : "text";
-        setMode(newMode);
+      function updateRecognizeButton() {
+        const btn = document.querySelector(".controls button:nth-child(3)");
+        if (currentMode === "text") {
+          btn.innerText = "🔍 Recognize Text";
+        } else if (currentMode === "object_yolo") {
+          btn.innerText = "🔍 Recognize Object using YOLO";
+        } else {
+          btn.innerText = "🔍 Recognize Object using CNN";
+        }
+      }
+
+      function showObjectOptions() {
+        document.getElementById("objectModelSelect").style.display = "block";
+      }
+
+      function selectObjectModel() {
+        const selectedModel = document.getElementById(
+          "objectModelDropdown"
+        ).value;
+        setMode(selectedModel);
         document.getElementById("recognizedText").innerText =
-          newMode === "text" ? "Text: " : "Object: ";
+          selectedModel.includes("object") ? "Object: " : "Text: ";
+      }
+
+      function toggleMode() {
+        if (currentMode === "text") {
+          // Show dropdown to choose between object models
+          document.getElementById("objectModelSelect").style.display = "block";
+          document.getElementById("modeModal").style.display = "flex";
+        } else {
+          setMode("text");
+          document.getElementById("recognizedText").innerText = "Text: ";
+        }
       }
 
       function recognizeText() {
         fetch("/recognize", { method: "POST" })
           .then((res) => res.json())
           .then((data) => {
-            if (currentMode === "object") {
-              document.getElementById(
-                "recognizedText"
-              ).innerText = `Object: ${data.label} (${data.confidence}%)`;
-            } else {
+            if (currentMode === "text") {
               document.getElementById(
                 "recognizedText"
               ).innerText = `Text: ${data.text}`;
+            } else {
+              document.getElementById(
+                "recognizedText"
+              ).innerText = `Object: ${data.label} (${data.confidence}%)`;
             }
           });
       }
@@ -143,18 +187,10 @@
         fetch("/color", { method: "POST" });
       }
 
-      // function recognizeText() {
-      //   fetch("/recognize", { method: "POST" })
-      //     .then((res) => res.json())
-      //     .then((data) => {
-      //       document.getElementById("recognizedText").innerText =
-      //         "Text: " + data.text;
-      //     });
-      // }
-
       function clearCanvas() {
         fetch("/clear", { method: "POST" });
-        document.getElementById("recognizedText").innerText = "Text: ";
+        document.getElementById("recognizedText").innerText =
+          currentMode === "text" ? "Text: " : "Object: ";
       }
 
       function save(mode) {
@@ -173,22 +209,15 @@
             }
           });
       }
+
       document.addEventListener("keydown", function (event) {
         const key = event.key.toLowerCase();
-
-        if (key === "c") {
-          changeColor();
-        } else if (key === "r") {
-          recognizeText();
-        } else if (key === "x") {
-          clearCanvas();
-        } else if (key === "1") {
-          save("with_bg");
-        } else if (key === "2") {
-          save("transparent");
-        } else if (key === "m") {
-      toggleMode();
-    }
+        if (key === "c") changeColor();
+        else if (key === "r") recognizeText();
+        else if (key === "x") clearCanvas();
+        else if (key === "1") save("with_bg");
+        else if (key === "2") save("transparent");
+        else if (key === "m") toggleMode();
       });
     </script>
   </body>
