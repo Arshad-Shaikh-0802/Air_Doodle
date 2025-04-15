@@ -1,4 +1,4 @@
-# $env:GOOGLE_APPLICATION_CREDENTIALS = "D:/Sem_6/ML/credentials.json"
+# $env:GOOGLE_APPLICATION_CREDENTIALS = ""
 
 from flask import Flask, render_template, Response, request, jsonify
 import cv2
